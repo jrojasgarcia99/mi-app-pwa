@@ -1,4 +1,4 @@
-const CACHE = 'app-v1';
+const CACHE = 'app-v2';
 const ASSETS = ['/', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
