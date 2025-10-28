@@ -1,65 +1,72 @@
-import Image from "next/image";
+'use client';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { formatCRC } from './lib/format';
 
-export default function Home() {
+type Wallet = { id:string; name:string; currency:'CRC'; budget:number; unlimited:boolean; icon?:string };
+type Expense = { id:string; walletId:string; amount:number; note?:string; date:string; method?:string };
+
+const WKEY='trackin.wallets.v1';
+const EKEY='trackin.expenses.v1';
+
+export default function Page(){
+  const [wallets,setWallets]=useState<Wallet[]>([]);
+  const [expenses,setExpenses]=useState<Expense[]>([]);
+  useEffect(()=>{ setWallets(JSON.parse(localStorage.getItem(WKEY)||'[]')); setExpenses(JSON.parse(localStorage.getItem(EKEY)||'[]')); },[]);
+  const totals = useMemo(()=> {
+    const map:Record<string,{spent:number}> = {};
+    for(const e of expenses){ map[e.walletId] ??= {spent:0}; map[e.walletId].spent += e.amount; }
+    return map;
+  },[expenses]);
+
+  const overall = useMemo(()=>{
+    let available=0;
+    for(const w of wallets){
+      const spent = totals[w.id]?.spent ?? 0;
+      available += w.unlimited ? -spent : (w.budget - spent);
+    }
+    return available;
+  },[wallets,totals]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main>
+      <h1 className="h1">Wallets</h1>
+
+      <div className="card headerCard" style={{marginBottom:16}}>
+        <div className="row">
+          <div>
+            <div className="muted">Total available</div>
+            <div className="big ok">{formatCRC(overall)}</div>
+          </div>
+          <div className="badge">CRC</div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+
+      <ul className="list">
+        {wallets.map(w=>{
+          const spent = totals[w.id]?.spent ?? 0;
+          const available = w.unlimited ? -spent : (w.budget - spent);
+          return (
+            <li key={w.id} className="item">
+              <Link href={`/wallet/${w.id}`} className="link" style={{flex:1}}>
+                <div className="wallet">
+                  <div className="walletIcon">₡</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700}}>{w.name}</div>
+                    <div className="muted" style={{fontSize:13}}>
+                      {w.unlimited ? 'Unlimited' : `${formatCRC(w.budget)} budget`}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+              <div className="mono" style={{fontWeight:700,color:'var(--success)'}}>{formatCRC(available)}</div>
+            </li>
+          );
+        })}
+        {wallets.length===0 && <div className="card">Aún no tienes wallets. Crea la primera con el botón verde.</div>}
+      </ul>
+
+      <Link href="/wallet/new" className="fab">＋ New Wallet</Link>
+    </main>
   );
 }
