@@ -5,7 +5,7 @@
   --muted:#6b7280;
   --card:#ffffff;
   --line:#e5e7eb;
-  --success:#16a34a;   /* lo dejamos por si lo usas en textos/estados */
+  --success:#003057;   /* lo dejamos por si lo usas en textos/estados */
   --danger:#ef4444;
 }
 
@@ -99,7 +99,6 @@ main{max-width:860px;margin:20px auto;padding:0 16px}
 
 .link{color:inherit;text-decoration:none}
 
-.headerCard .ok {
-  color: var(--ink);
-  font-weight: 900;
-}
+/* Tarjeta resumen: mantiene el verde como “estado OK”, pero fondo de marca */
+.headerCard .big{font-weight:900;font-size:26px}
+.headerCard .ok{color:var(--success);font-weight:900}
